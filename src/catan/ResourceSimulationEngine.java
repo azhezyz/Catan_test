@@ -44,17 +44,16 @@ public final class ResourceSimulationEngine {
             return;
         }
         for (Tile tile : board.tilesForRoll(roll)) {
-            tile.getResourceType().ifPresent(resource -> {
-                for (int nodeId : tile.getAdjacentNodeIds()) {
-                    Node node = board.getNode(nodeId);
-                    node.getOwner().ifPresent(owner -> {
-                        int amount = node.getBuilding().getType() == BuildingType.CITY ? 2 : 1;
-                        owner.addResource(resource, amount);
-                        log.add(String.format("[%d] / %s : Gained %d %s from Tile %d", round, owner.getLabel(), amount,
-                                resource, tile.getId()));
-                    });
-                }
-            });
+            ResourceType resource = tile.getResourceType();
+            for (int nodeId : tile.getAdjacentNodeIds()) {
+                Node node = board.getNode(nodeId);
+                node.getOwner().ifPresent(owner -> {
+                    int amount = node.getBuilding().getType() == BuildingType.CITY ? 2 : 1;
+                    owner.addResource(resource, amount);
+                    log.add(String.format("[%d] / %s : Gained %d %s from Tile %d", round, owner.getName(), amount,
+                            resource, tile.getId()));
+                });
+            }
         }
     }
 }

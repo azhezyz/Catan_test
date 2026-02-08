@@ -122,4 +122,28 @@ public final class GameEngine {
         resources.put(ResourceType.ORE, ore);
         return resources;
     }
+
+    public static List<ActionDecision> availableActions(Board board, Player player) {
+        List<ActionDecision> actions = new ArrayList<>();
+        for (Node node : board.getNodes()) {
+            if (!node.isClaimed() && player.canAfford(SETTLEMENT_COST)) {
+                actions.add(ActionDecision.settlement(node.getId()));
+            }
+        }
+        for (Path path : board.getPaths()) {
+            if (!path.isClaimed() && isAdjacentToPlayerSettlement(path, player) && player.canAfford(ROAD_COST)) {
+                actions.add(ActionDecision.road(path.getId()));
+            }
+        }
+        return actions;
+    }
+
+    private static boolean isAdjacentToPlayerSettlement(Path path, Player player) {
+        for (int nodeId : player.getSettlementNodeIds()) {
+            if (path.isAdjacentToNode(nodeId)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

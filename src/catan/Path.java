@@ -52,4 +52,29 @@ public final class Path {
     public boolean isAdjacentToNode(int nodeId) {
         return nodeAId == nodeId || nodeBId == nodeId;
     }
+    public boolean canBuildRoad(Board board, Player player) {
+        if (owner != null) {
+            return false;
+        }
+        // 检查玩家是否拥有该路径端点之一的定居点
+        Node nodeA = board.getNode(nodeAId);
+        Node nodeB = board.getNode(nodeBId);
+        if ((nodeA.getOwner().isPresent() && nodeA.getOwner().get().equals(player))
+                || (nodeB.getOwner().isPresent() && nodeB.getOwner().get().equals(player))) {
+            return true;
+        }
+        // 检查玩家是否有连接到端点的已有道路
+        for (Path other : board.getPaths()) {
+            if (other == this || !other.isClaimed()) {
+                continue;
+            }
+            if (other.getOwner().isPresent() && other.getOwner().get().equals(player)) {
+                if (other.isAdjacentToNode(nodeAId) || other.isAdjacentToNode(nodeBId)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 }

@@ -6,19 +6,20 @@ import java.util.Map;
 
 public final class BuildPlanner {
     private static final Map<ResourceType, Integer> SETTLEMENT_COST = Map.of(
-            ResourceType.LUMBER, 1,
+            ResourceType.WOOD, 1,
             ResourceType.BRICK, 1,
-            ResourceType.WOOL, 1,
-            ResourceType.GRAIN, 1
+            ResourceType.SHEEP, 1,
+            ResourceType.WHEAT, 1
     );
     private static final Map<ResourceType, Integer> ROAD_COST = Map.of(
-            ResourceType.LUMBER, 1,
+            ResourceType.WOOD, 1,
             ResourceType.BRICK, 1
     );
     private static final Map<ResourceType, Integer> CITY_COST = Map.of(
-            ResourceType.GRAIN, 2,
+            ResourceType.WHEAT, 2,
             ResourceType.ORE, 3
     );
+
 
     private BuildPlanner() {
     }

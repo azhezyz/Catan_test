@@ -4,10 +4,10 @@ import java.util.Optional;
 
 public enum TileType {
     HILLS(ResourceType.BRICK),
-    FOREST(ResourceType.LUMBER),
+    FOREST(ResourceType.WOOD),
     MOUNTAINS(ResourceType.ORE),
-    FIELDS(ResourceType.GRAIN),
-    PASTURE(ResourceType.WOOL),
+    FIELDS(ResourceType.WHEAT),
+    PASTURE(ResourceType.SHEEP),
     DESERT(null);
 
     private final ResourceType resourceType;
