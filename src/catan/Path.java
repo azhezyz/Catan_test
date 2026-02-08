@@ -3,7 +3,7 @@ package catan;
 import java.util.Objects;
 import java.util.Optional;
 
-public final class Path implements Identifiable {
+public final class Path {
     private final int id;
     private final int nodeAId;
     private final int nodeBId;
@@ -21,7 +21,6 @@ public final class Path implements Identifiable {
         this.nodeBId = nodeBId;
     }
 
-    @Override
     public int getId() {
         return id;
     }
@@ -42,24 +41,15 @@ public final class Path implements Identifiable {
         return owner != null;
     }
 
-    public boolean canBuildRoad(Board board, Player player) {
-        Objects.requireNonNull(board, "board");
+    public void claim(Player player) {
         Objects.requireNonNull(player, "player");
-        if (isClaimed()) {
-            return false;
-        }
-        return board.isRoadConnectedToPlayer(player, nodeAId, nodeBId);
-    }
-
-    public void buildRoad(Board board, Player player) {
-        if (!canBuildRoad(board, player)) {
-            throw new IllegalStateException("Cannot build road on path " + id);
+        if (owner != null) {
+            throw new IllegalStateException("Path already claimed.");
         }
         owner = player;
-        player.addRoad(id);
     }
 
-    public boolean connectsNode(int nodeId) {
+    public boolean isAdjacentToNode(int nodeId) {
         return nodeAId == nodeId || nodeBId == nodeId;
     }
 }
