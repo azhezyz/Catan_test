@@ -4,22 +4,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Centralizes build costs and legal build actions for deterministic agent decisions.
- */
 public final class BuildPlanner {
     private static final Map<ResourceType, Integer> SETTLEMENT_COST = Map.of(
-            ResourceType.WOOD, 1,
+            ResourceType.LUMBER, 1,
             ResourceType.BRICK, 1,
-            ResourceType.SHEEP, 1,
-            ResourceType.WHEAT, 1
+            ResourceType.WOOL, 1,
+            ResourceType.GRAIN, 1
     );
     private static final Map<ResourceType, Integer> ROAD_COST = Map.of(
-            ResourceType.WOOD, 1,
+            ResourceType.LUMBER, 1,
             ResourceType.BRICK, 1
     );
     private static final Map<ResourceType, Integer> CITY_COST = Map.of(
-            ResourceType.WHEAT, 2,
+            ResourceType.GRAIN, 2,
             ResourceType.ORE, 3
     );
 

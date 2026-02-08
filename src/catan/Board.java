@@ -3,11 +3,9 @@ package catan;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 public final class Board {
     private final Map<Integer, Tile> tilesById;
@@ -15,16 +13,28 @@ public final class Board {
     private final Map<Integer, Path> pathsById;
 
     public Board(List<Tile> tiles, List<Node> nodes, List<Path> paths) {
-        this.tilesById = indexById(Objects.requireNonNull(tiles, "tiles"), "tile");
-        this.nodesById = indexById(Objects.requireNonNull(nodes, "nodes"), "node");
-        this.pathsById = indexById(Objects.requireNonNull(paths, "paths"), "path");
+        Objects.requireNonNull(tiles, "tiles");
+        Objects.requireNonNull(nodes, "nodes");
+        Objects.requireNonNull(paths, "paths");
+        this.tilesById = indexById(tiles, "tile");
+        this.nodesById = indexById(nodes, "node");
+        this.pathsById = indexById(paths, "path");
         validateAdjacency();
     }
 
-    private static <T extends Identifiable> Map<Integer, T> indexById(List<T> items, String label) {
+    private static <T> Map<Integer, T> indexById(List<T> items, String label) {
         Map<Integer, T> map = new HashMap<>();
         for (T item : items) {
-            int id = item.getId();
+            int id;
+            if (item instanceof Tile tile) {
+                id = tile.getId();
+            } else if (item instanceof Node node) {
+                id = node.getId();
+            } else if (item instanceof Path path) {
+                id = path.getId();
+            } else {
+                throw new IllegalArgumentException("Unsupported " + label + " type: " + item.getClass());
+            }
             if (map.put(id, item) != null) {
                 throw new IllegalArgumentException("Duplicate " + label + " id " + id);
             }
@@ -47,12 +57,6 @@ public final class Board {
             for (int tileId : node.getAdjacentTileIds()) {
                 if (!tilesById.containsKey(tileId)) {
                     throw new IllegalArgumentException("Node " + node.getId() + " references missing tile " + tileId);
-                }
-            }
-            for (int pathId : node.getAdjacentPathIds()) {
-                Path path = pathsById.get(pathId);
-                if (path == null || !path.connectsNode(node.getId())) {
-                    throw new IllegalArgumentException("Node " + node.getId() + " references missing path " + pathId);
                 }
             }
         }
@@ -94,56 +98,10 @@ public final class Board {
     public List<Tile> tilesForRoll(int roll) {
         List<Tile> matches = new ArrayList<>();
         for (Tile tile : tilesById.values()) {
-            if (tile.producesOnRoll(roll)) {
+            if (tile.getNumberToken() == roll) {
                 matches.add(tile);
             }
         }
         return matches;
-    }
-
-    public List<Node> getAdjacentNodes(int nodeId) {
-        Set<Integer> adjacentIds = new HashSet<>();
-        Node node = getNode(nodeId);
-        for (int pathId : node.getAdjacentPathIds()) {
-            Path path = getPath(pathId);
-            int otherId = path.getNodeAId() == nodeId ? path.getNodeBId() : path.getNodeAId();
-            adjacentIds.add(otherId);
-        }
-        List<Node> neighbors = new ArrayList<>();
-        for (int id : adjacentIds) {
-            neighbors.add(getNode(id));
-        }
-        return neighbors;
-    }
-
-    public boolean hasAdjacentRoadOwnedBy(Player player, int nodeId) {
-        for (int pathId : getNode(nodeId).getAdjacentPathIds()) {
-            Path path = getPath(pathId);
-            if (path.getOwner().isPresent() && path.getOwner().get().equals(player)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean isRoadConnectedToPlayer(Player player, int nodeAId, int nodeBId) {
-        if (isNodeOwnedByPlayer(player, nodeAId) || isNodeOwnedByPlayer(player, nodeBId)) {
-            return true;
-        }
-        return isAdjacentRoadOwnedBy(player, nodeAId) || isAdjacentRoadOwnedBy(player, nodeBId);
-    }
-
-    private boolean isAdjacentRoadOwnedBy(Player player, int nodeId) {
-        for (int pathId : getNode(nodeId).getAdjacentPathIds()) {
-            Path path = getPath(pathId);
-            if (path.getOwner().isPresent() && path.getOwner().get().equals(player)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean isNodeOwnedByPlayer(Player player, int nodeId) {
-        return getNode(nodeId).getOwner().map(player::equals).orElse(false);
     }
 }

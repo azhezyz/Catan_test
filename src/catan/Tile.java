@@ -3,27 +3,23 @@ package catan;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
-public final class Tile implements Identifiable {
+public final class Tile {
     private final int id;
-    private final TileType type;
-    private final Integer numberToken;
+    private final ResourceType resourceType;
+    private final int numberToken;
     private final Set<Integer> adjacentNodeIds;
 
-    public Tile(int id, TileType type, Integer numberToken, Set<Integer> adjacentNodeIds) {
-        if (id < 0) {
-            throw new IllegalArgumentException("Tile id must be non-negative.");
+    public Tile(int id, ResourceType resourceType, int numberToken, Set<Integer> adjacentNodeIds) {
+        if (id <= 0) {
+            throw new IllegalArgumentException("Tile id must be positive.");
+        }
+        if (numberToken < 2 || numberToken > 12) {
+            throw new IllegalArgumentException("Number token must be between 2 and 12.");
         }
         this.id = id;
-        this.type = Objects.requireNonNull(type, "type");
-        if (type == TileType.DESERT && numberToken != null) {
-            throw new IllegalArgumentException("Desert tile cannot have a number token.");
-        }
-        if (type != TileType.DESERT && (numberToken == null || numberToken < 2 || numberToken > 12)) {
-            throw new IllegalArgumentException("Non-desert tiles must have a number token between 2 and 12.");
-        }
+        this.resourceType = Objects.requireNonNull(resourceType, "resourceType");
         this.numberToken = numberToken;
         this.adjacentNodeIds = new HashSet<>(Objects.requireNonNull(adjacentNodeIds, "adjacentNodeIds"));
         if (this.adjacentNodeIds.isEmpty()) {
@@ -31,28 +27,19 @@ public final class Tile implements Identifiable {
         }
     }
 
-    @Override
     public int getId() {
         return id;
     }
 
-    public TileType getType() {
-        return type;
+    public ResourceType getResourceType() {
+        return resourceType;
     }
 
-    public Optional<Integer> getNumberToken() {
-        return Optional.ofNullable(numberToken);
+    public int getNumberToken() {
+        return numberToken;
     }
 
     public Set<Integer> getAdjacentNodeIds() {
         return Collections.unmodifiableSet(adjacentNodeIds);
-    }
-
-    public boolean producesOnRoll(int roll) {
-        return numberToken != null && numberToken == roll;
-    }
-
-    public Optional<ResourceType> getResourceType() {
-        return type.getResourceType();
     }
 }
