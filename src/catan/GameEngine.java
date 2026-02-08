@@ -61,6 +61,9 @@ public final class GameEngine {
 
     private void distributeResources(int roll, List<String> log) {
         for (Tile tile : board.tilesForRoll(roll)) {
+            if (tile.getResourceType() == null) {
+                continue; // Desert tile produces nothing
+            }
             for (int nodeId : tile.getAdjacentNodeIds()) {
                 Node node = board.getNode(nodeId);
                 node.getOwner().ifPresent(owner -> {
@@ -76,7 +79,7 @@ public final class GameEngine {
             return;
         }
         for (Node node : board.getNodes()) {
-            if (!node.isClaimed()) {
+            if (!node.isClaimed() && !hasAdjacentSettlement(node) && canClaimNode(player, node)) {
                 node.claim(player);
                 player.spend(SETTLEMENT_COST);
                 player.addSettlement(node.getId());
@@ -84,6 +87,32 @@ public final class GameEngine {
                 return;
             }
         }
+    }
+
+    /**
+     * 距离规则：检查该节点的所有相邻节点是否都未被占据。
+     */
+    private boolean hasAdjacentSettlement(Node node) {
+        for (int neighborId : node.getAdjacentNodeIds()) {
+            if (board.getNode(neighborId).isClaimed()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 检查玩家是否有连接到该节点的道路。
+     */
+    private boolean canClaimNode(Player player, Node node) {
+        for (int nodeId : player.getSettlementNodeIds()) {
+            for (Path path : board.getPaths()) {
+                if (path.isAdjacentToNode(node.getId()) && path.isAdjacentToNode(nodeId)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void buildRoadIfPossible(Player player, List<String> log) {

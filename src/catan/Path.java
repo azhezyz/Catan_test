@@ -10,10 +10,10 @@ public final class Path {
     private Player owner;
 
     public Path(int id, int nodeAId, int nodeBId) {
-        if (id <= 0) {
+        if (id < 0) {
             throw new IllegalArgumentException("Path id must be positive.");
         }
-        if (nodeAId <= 0 || nodeBId <= 0 || nodeAId == nodeBId) {
+        if (nodeAId < 0 || nodeBId < 0 || nodeAId == nodeBId) {
             throw new IllegalArgumentException("Path must connect two distinct node ids.");
         }
         this.id = id;

@@ -45,6 +45,9 @@ public final class ResourceSimulationEngine {
         }
         for (Tile tile : board.tilesForRoll(roll)) {
             ResourceType resource = tile.getResourceType();
+            if (resource == null) {
+                continue; // Desert tile produces nothing
+            }
             for (int nodeId : tile.getAdjacentNodeIds()) {
                 Node node = board.getNode(nodeId);
                 node.getOwner().ifPresent(owner -> {
