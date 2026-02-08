@@ -1,9 +1,9 @@
 package catan;
 
 public enum ResourceType {
+    WOOD,
     BRICK,
-    LUMBER,
-    WOOL,
-    GRAIN,
+    SHEEP,
+    WHEAT,
     ORE
 }

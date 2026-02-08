@@ -7,48 +7,36 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public final class Player implements Identifiable {
-    private final int id;
+public final class Player {
+    private final String name;
     private final EnumMap<ResourceType, Integer> resources;
-    private final Set<Integer> roadPathIds;
     private final Set<Integer> settlementNodeIds;
-    private final Set<Integer> cityNodeIds;
-    private int victoryPoints;
+    private final Set<Integer> roadPathIds;
 
-    public Player(int id) {
-        if (id <= 0) {
-            throw new IllegalArgumentException("Player id must be positive.");
-        }
-        this.id = id;
+    public Player(String name) {
+        this.name = requireName(name);
         this.resources = new EnumMap<>(ResourceType.class);
         for (ResourceType type : ResourceType.values()) {
             resources.put(type, 0);
         }
-        this.roadPathIds = new HashSet<>();
         this.settlementNodeIds = new HashSet<>();
-        this.cityNodeIds = new HashSet<>();
-        this.victoryPoints = 0;
+        this.roadPathIds = new HashSet<>();
     }
 
-    @Override
-    public int getId() {
-        return id;
+    private static String requireName(String name) {
+        String trimmed = Objects.requireNonNull(name, "name").trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("Player name cannot be blank.");
+        }
+        return trimmed;
     }
 
-    public String getLabel() {
-        return "P" + id;
+    public String getName() {
+        return name;
     }
 
     public Map<ResourceType, Integer> getResources() {
         return Collections.unmodifiableMap(resources);
-    }
-
-    public int getResourceCount() {
-        int count = 0;
-        for (int value : resources.values()) {
-            count += value;
-        }
-        return count;
     }
 
     public int getResourceCount(ResourceType type) {
@@ -82,50 +70,23 @@ public final class Player implements Identifiable {
         }
     }
 
-    public void addRoad(int pathId) {
-        if (!roadPathIds.add(pathId)) {
-            throw new IllegalStateException("Road already recorded for path " + pathId);
-        }
-    }
-
     public void addSettlement(int nodeId) {
         if (!settlementNodeIds.add(nodeId)) {
             throw new IllegalStateException("Settlement already recorded for node " + nodeId);
         }
     }
 
-    public void removeSettlement(int nodeId) {
-        if (!settlementNodeIds.remove(nodeId)) {
-            throw new IllegalStateException("Settlement missing for node " + nodeId);
+    public void addRoad(int pathId) {
+        if (!roadPathIds.add(pathId)) {
+            throw new IllegalStateException("Road already recorded for path " + pathId);
         }
-    }
-
-    public void addCity(int nodeId) {
-        if (!cityNodeIds.add(nodeId)) {
-            throw new IllegalStateException("City already recorded for node " + nodeId);
-        }
-    }
-
-    public Set<Integer> getRoadPathIds() {
-        return Collections.unmodifiableSet(roadPathIds);
     }
 
     public Set<Integer> getSettlementNodeIds() {
         return Collections.unmodifiableSet(settlementNodeIds);
     }
 
-    public Set<Integer> getCityNodeIds() {
-        return Collections.unmodifiableSet(cityNodeIds);
-    }
-
-    public int getVictoryPoints() {
-        return victoryPoints;
-    }
-
-    public void addVictoryPoints(int amount) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Victory point increment must be positive.");
-        }
-        victoryPoints += amount;
+    public Set<Integer> getRoadPathIds() {
+        return Collections.unmodifiableSet(roadPathIds);
     }
 }

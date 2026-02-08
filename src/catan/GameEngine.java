@@ -1,22 +1,30 @@
 package catan;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public final class GameEngine {
+    private static final Map<ResourceType, Integer> SETTLEMENT_COST = Map.of(
+            ResourceType.WOOD, 1,
+            ResourceType.BRICK, 1,
+            ResourceType.SHEEP, 1,
+            ResourceType.WHEAT, 1
+    );
+    private static final Map<ResourceType, Integer> ROAD_COST = Map.of(
+            ResourceType.WOOD, 1,
+            ResourceType.BRICK, 1
+    );
+
     private final Board board;
     private final List<Player> players;
-    private final List<Agent> agents;
     private final List<Integer> diceSequence;
 
-    public GameEngine(Board board, List<Player> players, List<Agent> agents, List<Integer> diceSequence) {
+    public GameEngine(Board board, List<Player> players, List<Integer> diceSequence) {
         this.board = Objects.requireNonNull(board, "board");
         this.players = List.copyOf(Objects.requireNonNull(players, "players"));
-        this.agents = List.copyOf(Objects.requireNonNull(agents, "agents"));
-        if (this.players.size() != this.agents.size()) {
-            throw new IllegalArgumentException("Each player must have an agent.");
-        }
         if (this.players.isEmpty()) {
             throw new IllegalArgumentException("At least one player is required.");
         }
@@ -24,104 +32,94 @@ public final class GameEngine {
         if (this.diceSequence.isEmpty()) {
             throw new IllegalArgumentException("Dice sequence cannot be empty.");
         }
+        for (int roll : this.diceSequence) {
+            if (roll < 2 || roll > 12) {
+                throw new IllegalArgumentException("Dice roll out of range: " + roll);
+            }
+        }
     }
 
-    public List<String> runSimulation(int rounds) {
-        if (rounds <= 0 || rounds > 8192) {
-            throw new IllegalArgumentException("Rounds must be between 1 and 8192.");
+    public SimulationReport runSimulation(int rounds) {
+        if (rounds <= 0) {
+            throw new IllegalArgumentException("Rounds must be positive.");
         }
         List<String> log = new ArrayList<>();
         int rollIndex = 0;
-        boolean victoryReached = false;
-        for (int round = 1; round <= rounds && !victoryReached; round++) {
-            for (int index = 0; index < players.size() && !victoryReached; index++) {
-                Player player = players.get(index);
-                int roll = diceSequence.get(rollIndex % diceSequence.size());
-                rollIndex++;
-                log.add(String.format("[%d] / %s : Rolled %d", round, player.getLabel(), roll));
-                distributeResources(roll);
-                GameState state = new GameState(board);
-                ActionDecision decision = agents.get(index).decideBuild(state, player);
-                if (player.getResourceCount() > 7 && decision.getAction() == BuildAction.NONE) {
-                    decision = BuildPlanner.forcedDecision(board, player);
-                }
-                logBuildAction(round, player, decision, log);
-                victoryReached = player.getVictoryPoints() >= 10;
+        for (int round = 1; round <= rounds; round++) {
+            int roll = diceSequence.get(rollIndex % diceSequence.size());
+            rollIndex++;
+            log.add(String.format("[Round %d] roll=%d", round, roll));
+            distributeResources(roll, log);
+            for (Player player : players) {
+                buildSettlementIfPossible(player, log);
+                buildRoadIfPossible(player, log);
             }
-            log.add(formatVictoryPoints(round));
+            log.add("-- End of round --");
         }
-        return log;
+        return new SimulationReport(log, players);
     }
 
-    private void distributeResources(int roll) {
-        if (roll == 7) {
-            return;
-        }
+    private void distributeResources(int roll, List<String> log) {
         for (Tile tile : board.tilesForRoll(roll)) {
-            tile.getResourceType().ifPresent(resource -> {
-                for (int nodeId : tile.getAdjacentNodeIds()) {
-                    Node node = board.getNode(nodeId);
-                    node.getOwner().ifPresent(owner -> {
-                        int amount = node.getBuilding().getType() == BuildingType.CITY ? 2 : 1;
-                        owner.addResource(resource, amount);
-                    });
-                }
-            });
-        }
-    }
-
-    private void logBuildAction(int round, Player player, ActionDecision decision, List<String> log) {
-        switch (decision.getAction()) {
-            case ROAD -> buildRoad(round, player, decision.getTargetId(), log);
-            case SETTLEMENT -> buildSettlement(round, player, decision.getTargetId(), log);
-            case CITY -> buildCity(round, player, decision.getTargetId(), log);
-            case NONE -> log.add(String.format("[%d] / %s : No build action", round, player.getLabel()));
-        }
-    }
-
-    private void buildRoad(int round, Player player, int pathId, List<String> log) {
-        Path path = board.getPath(pathId);
-        if (!player.canAfford(BuildPlanner.roadCost()) || !path.canBuildRoad(board, player)) {
-            log.add(String.format("[%d] / %s : No build action", round, player.getLabel()));
-            return;
-        }
-        player.spend(BuildPlanner.roadCost());
-        path.buildRoad(board, player);
-        log.add(String.format("[%d] / %s : Built road between Node %d and Node %d", round, player.getLabel(), path.getNodeAId(), path.getNodeBId()));
-    }
-
-    private void buildSettlement(int round, Player player, int nodeId, List<String> log) {
-        Node node = board.getNode(nodeId);
-        if (!player.canAfford(BuildPlanner.settlementCost()) || !node.canBuildSettlement(board, player)) {
-            log.add(String.format("[%d] / %s : No build action", round, player.getLabel()));
-            return;
-        }
-        player.spend(BuildPlanner.settlementCost());
-        node.buildSettlement(board, player);
-        log.add(String.format("[%d] / %s : Built settlement at Node %d", round, player.getLabel(), node.getId()));
-    }
-
-    private void buildCity(int round, Player player, int nodeId, List<String> log) {
-        Node node = board.getNode(nodeId);
-        if (!player.canAfford(BuildPlanner.cityCost()) || !node.canUpgradeToCity(player)) {
-            log.add(String.format("[%d] / %s : No build action", round, player.getLabel()));
-            return;
-        }
-        player.spend(BuildPlanner.cityCost());
-        node.buildCity(player);
-        log.add(String.format("[%d] / %s : Built city at Node %d", round, player.getLabel(), node.getId()));
-    }
-
-    private String formatVictoryPoints(int round) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("End of round ").append(round).append(" : ");
-        for (int index = 0; index < players.size(); index++) {
-            Player player = players.get(index);
-            if (index > 0) {
-                builder.append(" ");
+            for (int nodeId : tile.getAdjacentNodeIds()) {
+                Node node = board.getNode(nodeId);
+                node.getOwner().ifPresent(owner -> {
+                    owner.addResource(tile.getResourceType(), 1);
+                    log.add(String.format("  %s gains 1 %s from tile %d", owner.getName(), tile.getResourceType(), tile.getId()));
+                });
             }
-            builder.append(player.getLabel()).append("=").append(player.getVictoryPoints());
         }
-        return builder.toString();
+    }
+
+    private void buildSettlementIfPossible(Player player, List<String> log) {
+        if (!player.canAfford(SETTLEMENT_COST)) {
+            return;
+        }
+        for (Node node : board.getNodes()) {
+            if (!node.isClaimed()) {
+                node.claim(player);
+                player.spend(SETTLEMENT_COST);
+                player.addSettlement(node.getId());
+                log.add(String.format("  %s builds settlement on node %d", player.getName(), node.getId()));
+                return;
+            }
+        }
+    }
+
+    private void buildRoadIfPossible(Player player, List<String> log) {
+        if (!player.canAfford(ROAD_COST)) {
+            return;
+        }
+        for (Path path : board.getPaths()) {
+            if (path.isClaimed()) {
+                continue;
+            }
+            if (canClaimPath(player, path)) {
+                path.claim(player);
+                player.spend(ROAD_COST);
+                player.addRoad(path.getId());
+                log.add(String.format("  %s builds road on path %d", player.getName(), path.getId()));
+                return;
+            }
+        }
+    }
+
+    private boolean canClaimPath(Player player, Path path) {
+        for (int nodeId : player.getSettlementNodeIds()) {
+            if (path.isAdjacentToNode(nodeId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static Map<ResourceType, Integer> initialResources(int wood, int brick, int sheep, int wheat, int ore) {
+        EnumMap<ResourceType, Integer> resources = new EnumMap<>(ResourceType.class);
+        resources.put(ResourceType.WOOD, wood);
+        resources.put(ResourceType.BRICK, brick);
+        resources.put(ResourceType.SHEEP, sheep);
+        resources.put(ResourceType.WHEAT, wheat);
+        resources.put(ResourceType.ORE, ore);
+        return resources;
     }
 }
