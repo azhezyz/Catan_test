@@ -134,12 +134,7 @@ public final class GameEngine {
     }
 
     private boolean canClaimPath(Player player, Path path) {
-        for (int nodeId : player.getSettlementNodeIds()) {
-            if (path.isAdjacentToNode(nodeId)) {
-                return true;
-            }
-        }
-        return false;
+        return path.canBuildRoad(board, player);
     }
 
     public static Map<ResourceType, Integer> initialResources(int wood, int brick, int sheep, int wheat, int ore) {
@@ -160,19 +155,12 @@ public final class GameEngine {
             }
         }
         for (Path path : board.getPaths()) {
-            if (!path.isClaimed() && isAdjacentToPlayerSettlement(path, player) && player.canAfford(ROAD_COST)) {
+            if (!path.isClaimed() && path.canBuildRoad(board, player) && player.canAfford(ROAD_COST)) {
                 actions.add(ActionDecision.road(path.getId()));
             }
         }
         return actions;
     }
 
-    private static boolean isAdjacentToPlayerSettlement(Path path, Player player) {
-        for (int nodeId : player.getSettlementNodeIds()) {
-            if (path.isAdjacentToNode(nodeId)) {
-                return true;
-            }
-        }
-        return false;
-    }
+
 }
