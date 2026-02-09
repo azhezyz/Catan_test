@@ -6,10 +6,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+/*
+ * Represents a Hex Tile on the Catan board.
+ * Each tile has a ResourceType and a number token (2-12).
+ */
 public final class Tile {
     private final int id;
-    private final ResourceType resourceType;   // null for DESERT
-    private final int numberToken;              // 0 for DESERT (no production)
+    private final ResourceType resourceType;   // What it produces (null for Desert)
+    private final int numberToken;              // The dice roll needed to produce
     private final Set<Integer> adjacentNodeIds;
 
     public Tile(int id, ResourceType resourceType, int numberToken, Set<Integer> adjacentNodeIds) {

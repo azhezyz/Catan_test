@@ -34,8 +34,7 @@ public final class Demonstrator {
         seedInitialState(board, alice, bob, charlie, diana);
 
         // A sample dice sequence covering common numbers
-        List<Integer> diceSequence = List.of(6, 8, 5, 9, 4, 3, 11, 12, 10, 2, 6, 8, 5, 3, 9, 4);
-        GameEngine engine = new GameEngine(board, List.of(alice, bob, charlie, diana), diceSequence);
+        GameEngine engine = new GameEngine(board, List.of(alice, bob, charlie, diana));
         SimulationReport report = engine.runSimulation(8);
 
         for (String line : report.getLogLines()) {

@@ -6,6 +6,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+/*
+ * Represents a "Node" (an intersection point) on the hex grid.
+ * Nodes are where buildings (Settlements and Cities) are placed.
+ */
 public final class Node {
     private final int id;
     private final Set<Integer> adjacentTileIds;
@@ -13,6 +17,7 @@ public final class Node {
     private Player owner;
     private Building building;
 
+    // Constructor defines the ID and which tiles/nodes are next to this one.
     public Node(int id, Set<Integer> adjacentTileIds, Set<Integer> adjacentNodeIds) {
         if (id < 0) {
             throw new IllegalArgumentException("Node id must be non-negative.");
@@ -26,39 +31,35 @@ public final class Node {
         this.building = Building.empty();
     }
 
-    /**
-     * 获取所有相邻节点 ID（通过路径直接相连的节点）。
-     */
+    // Returns the IDs of other nodes connected directly to this one by a path.
     public Set<Integer> getAdjacentNodeIds() {
         return Collections.unmodifiableSet(adjacentNodeIds);
     }
 
-    /**
-     * 判断该节点是否可以升级为城市：节点必须已被该玩家拥有（有定居点）。
-     */
+    // A node can be upgraded if the player already owns a settlement there.
     public boolean canUpgradeToCity(Player player) {
         return owner != null && owner.equals(player)
                 && building.getType() == BuildingType.SETTLEMENT;
     }
 
-    /**
-     * 判断该节点是否可以建造定居点：
-     * 1. 节点未被占据
-     * 2. 相邻节点没有任何定居点/城市（距离规则）
-     * 3. 玩家在相邻路径上有道路
+   /*
+     * Settlement Building Rules:
+     * 1. The spot must be empty.
+     * 2. No buildings can be on any neighboring nodes (Distance Rule).
+     * 3. The player must have a road connecting to this node.
      */
     public boolean canBuildSettlement(Board board, Player player) {
         if (owner != null) {
             return false;
         }
-        // 距离规则：所有相邻节点必须为空
+        // Distance Rule check
         for (int neighborId : adjacentNodeIds) {
             Node neighbor = board.getNode(neighborId);
             if (neighbor.isClaimed()) {
                 return false;
             }
         }
-        // 玩家必须有一条道路连接到该节点
+        // Road connection check
         for (Path path : board.getPaths()) {
             if (path.isAdjacentToNode(id) && path.isClaimed()
                     && path.getOwner().isPresent() && path.getOwner().get().equals(player)) {
@@ -84,6 +85,7 @@ public final class Node {
         return owner != null;
     }
 
+    // Assigns the node to a player and places a settlement.
     public void claim(Player player) {
         Objects.requireNonNull(player, "player");
         if (owner != null) {
@@ -97,6 +99,7 @@ public final class Node {
         return building;
     }
 
+    // Upgrades the current settlement to a city.
     public void upgradeToCity(Player player) {
         Objects.requireNonNull(player, "player");
         if (owner == null || !owner.equals(player)) {

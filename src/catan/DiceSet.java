@@ -1,0 +1,25 @@
+package catan;
+
+/*
+ * DiceSet acts as a container for two Dice objects.
+ * In Catan, players roll two 6-sided dice and add them together to get a 
+ * result between 2 and 12.
+ */
+public final class DiceSet {
+    private final Dice die1;
+    private final Dice die2;
+
+    // The constructor initializes the two physical dice.
+    public DiceSet() {
+        this.die1 = new Dice();
+        this.die2 = new Dice();
+    }
+
+    /*
+     * Rolls both dice and returns the total sum.
+     * This result determines which hex tiles produce resources for that turn.
+     */
+    public int nextRoll() {
+        return die1.roll() + die2.roll();
+    }
+}

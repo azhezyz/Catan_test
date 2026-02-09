@@ -3,10 +3,14 @@ package catan;
 import java.util.Objects;
 import java.util.Optional;
 
+/*
+ * Represents a "Path" (an edge) between two nodes.
+ * Paths are where roads are built.
+ */
 public final class Path {
     private final int id;
-    private final int nodeAId;
-    private final int nodeBId;
+    private final int nodeAId; // First end of the road
+    private final int nodeBId; // Second end of the road
     private Player owner;
 
     public Path(int id, int nodeAId, int nodeBId) {
@@ -49,21 +53,28 @@ public final class Path {
         owner = player;
     }
 
+    // Checks if this path touches a specific node ID.
     public boolean isAdjacentToNode(int nodeId) {
         return nodeAId == nodeId || nodeBId == nodeId;
     }
+
+    /*
+     * Road Building Rules:
+     * 1. The path must be empty.
+     * 2. It must touch a building owned by the player OR another road owned by the player.
+     */
     public boolean canBuildRoad(Board board, Player player) {
         if (owner != null) {
             return false;
         }
-        // 检查玩家是否拥有该路径端点之一的定居点
+        // Touch building check
         Node nodeA = board.getNode(nodeAId);
         Node nodeB = board.getNode(nodeBId);
         if ((nodeA.getOwner().isPresent() && nodeA.getOwner().get().equals(player))
                 || (nodeB.getOwner().isPresent() && nodeB.getOwner().get().equals(player))) {
             return true;
         }
-        // 检查玩家是否有连接到端点的已有道路
+        // Touch existing road check
         for (Path other : board.getPaths()) {
             if (other == this || !other.isClaimed()) {
                 continue;

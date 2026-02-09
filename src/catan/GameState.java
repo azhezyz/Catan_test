@@ -1,5 +1,10 @@
 package catan;
 
+/*
+ * Represents the current state of the game board.
+ * This is useful if you want to save the game or pass the board data 
+ * to a different part of the program (like a User Interface).
+ */
 public final class GameState {
     private final Board board;
 
@@ -7,6 +12,7 @@ public final class GameState {
         this.board = board;
     }
 
+    // Returns the board associated with this state.
     public Board getBoard() {
         return board;
     }

@@ -7,11 +7,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+/*
+ * Represents a player in the game.
+ * It tracks their name, resource hand, buildings, and victory points.
+ */
 public final class Player {
     private final String name;
     private final EnumMap<ResourceType, Integer> resources;
     private final Set<Integer> settlementNodeIds;
     private final Set<Integer> roadPathIds;
+    private boolean hasLongestRoad = false;
 
     public Player(String name) {
         this.name = requireName(name);
@@ -39,10 +44,12 @@ public final class Player {
         return Collections.unmodifiableMap(resources);
     }
 
+    
     public int getResourceCount(ResourceType type) {
         return resources.getOrDefault(type, 0);
     }
 
+    // Basic resource management
     public void addResource(ResourceType type, int amount) {
         Objects.requireNonNull(type, "type");
         if (amount <= 0) {
@@ -88,5 +95,65 @@ public final class Player {
 
     public Set<Integer> getRoadPathIds() {
         return Collections.unmodifiableSet(roadPathIds);
+    }
+
+    // Setter for the title
+    public void setHasLongestRoad(boolean hasIt) {
+        this.hasLongestRoad = hasIt;
+    }
+
+    /*
+     * Scoring Logic:
+     * - 1 Point for every settlement owned.
+     * - 2 Points for holding the Longest Road title.
+     */
+    public int getVictoryPoints() {
+        int points = 0;
+        // 1 point per Settlement
+        points += settlementNodeIds.size();
+        // 2 points if holding Longest Road
+        if (hasLongestRoad) {
+            points += 2;
+        }
+        return points;
+    }
+
+    /*
+     * Longest Road Calculation:
+     * This uses a "Depth First Search" (DFS). It starts from every road segment 
+     * and tries to "walk" as far as possible to find the longest continuous string.
+     */
+    public int calculateLongestRoad(Board board) {
+        if (roadPathIds.isEmpty()) return 0;
+        int maxLen = 0;
+        for (int pathId : roadPathIds) {
+            Path startPath = board.getPath(pathId);
+            // Walk from both ends of the starting road segment
+            maxLen = Math.max(maxLen, 1 + walkRoad(board, startPath.getNodeAId(), new HashSet<>(Set.of(pathId))));
+            maxLen = Math.max(maxLen, 1 + walkRoad(board, startPath.getNodeBId(), new HashSet<>(Set.of(pathId))));
+        }
+        return maxLen;
+    }
+
+    // Recursive helper that "walks" along connected paths
+    private int walkRoad(Board board, int nodeId, Set<Integer> visited) {
+        Node node = board.getNode(nodeId);
+        // Path is broken if an opponent has a settlement here
+        if (node.isClaimed() && !node.getOwner().get().equals(this)) {
+            return 0;
+        }
+
+        int deepest = 0;
+        for (Path p : board.getPaths()) {
+            if (p.isAdjacentToNode(nodeId) && !visited.contains(p.getId())) {
+                if (p.getOwner().isPresent() && p.getOwner().get().equals(this)) {
+                    visited.add(p.getId());
+                    int nextNode = (p.getNodeAId() == nodeId) ? p.getNodeBId() : p.getNodeAId();
+                    deepest = Math.max(deepest, 1 + walkRoad(board, nextNode, visited));
+                    visited.remove(p.getId()); // Backtrack
+                }
+            }
+        }
+        return deepest;
     }
 }
