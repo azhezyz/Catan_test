@@ -10,7 +10,7 @@ import java.util.Set;
  * Represents a "Node" (an intersection point) on the hex grid.
  * Nodes are where buildings (Settlements and Cities) are placed.
  */
-public final class Node {
+public final class Node implements Identifiable {
     private final int id;
     private final Set<Integer> adjacentTileIds;
     private final Set<Integer> adjacentNodeIds;
@@ -60,9 +60,8 @@ public final class Node {
             }
         }
         // Road connection check
-        for (Path path : board.getPaths()) {
-            if (path.isAdjacentToNode(id) && path.isClaimed()
-                    && path.getOwner().isPresent() && path.getOwner().get().equals(player)) {
+        for (Path path : board.pathsAdjacentToNode(id)) {
+            if (path.isOwnedBy(player)) {
                 return true;
             }
         }
@@ -83,6 +82,10 @@ public final class Node {
 
     public boolean isClaimed() {
         return owner != null;
+    }
+
+    public boolean isOwnedBy(Player player) {
+        return owner != null && owner.equals(player);
     }
 
     // Assigns the node to a player and places a settlement.

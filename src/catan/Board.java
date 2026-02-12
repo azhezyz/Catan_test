@@ -3,6 +3,7 @@ package catan;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -17,6 +18,10 @@ public final class Board {
     private final Map<Integer, Tile> tilesById;
     private final Map<Integer, Node> nodesById;
     private final Map<Integer, Path> pathsById;
+    private final List<Tile> tiles;
+    private final List<Node> nodes;
+    private final List<Path> paths;
+    private final Map<Integer, List<Path>> pathsByNodeId;
 
     /*
      * The constructor takes lists of all components and organizes them.
@@ -35,25 +40,21 @@ public final class Board {
         
         // Ensure the connections between tiles/nodes/paths are valid
         validateAdjacency();
+
+        this.tiles = Collections.unmodifiableList(new ArrayList<>(tilesById.values()));
+        this.nodes = Collections.unmodifiableList(new ArrayList<>(nodesById.values()));
+        this.paths = Collections.unmodifiableList(new ArrayList<>(pathsById.values()));
+        this.pathsByNodeId = buildPathAdjacency();
     }
 
     /*
      * A helper method that takes a list of items and puts them into a Map 
      * keyed by their ID. It also checks for duplicate IDs to prevent bugs.
      */
-    private static <T> Map<Integer, T> indexById(List<T> items, String label) {
-        Map<Integer, T> map = new HashMap<>();
+    private static <T extends Identifiable> Map<Integer, T> indexById(List<T> items, String label) {
+        Map<Integer, T> map = new LinkedHashMap<>();
         for (T item : items) {
-            int id;
-            if (item instanceof Tile tile) {
-                id = tile.getId();
-            } else if (item instanceof Node node) {
-                id = node.getId();
-            } else if (item instanceof Path path) {
-                id = path.getId();
-            } else {
-                throw new IllegalArgumentException("Unsupported " + label + " type: " + item.getClass());
-            }
+            int id = item.getId();
             if (map.put(id, item) != null) {
                 throw new IllegalArgumentException("Duplicate " + label + " id " + id);
             }
@@ -62,6 +63,18 @@ public final class Board {
             throw new IllegalArgumentException("Board must include at least one " + label + ".");
         }
         return map;
+    }
+
+    private Map<Integer, List<Path>> buildPathAdjacency() {
+        Map<Integer, List<Path>> adjacency = new HashMap<>();
+        for (Path path : pathsById.values()) {
+            adjacency.computeIfAbsent(path.getNodeAId(), ignored -> new ArrayList<>()).add(path);
+            adjacency.computeIfAbsent(path.getNodeBId(), ignored -> new ArrayList<>()).add(path);
+        }
+        for (Map.Entry<Integer, List<Path>> entry : adjacency.entrySet()) {
+            entry.setValue(Collections.unmodifiableList(entry.getValue()));
+        }
+        return Collections.unmodifiableMap(adjacency);
     }
 
     /*
@@ -92,17 +105,17 @@ public final class Board {
 
     // Returns a copy of all tiles on the board
     public List<Tile> getTiles() {
-        return Collections.unmodifiableList(new ArrayList<>(tilesById.values()));
+        return tiles;
     }
 
     // Returns a copy of all nodes (intersections) on the board
     public List<Node> getNodes() {
-        return Collections.unmodifiableList(new ArrayList<>(nodesById.values()));
+        return nodes;
     }
 
     // Returns a copy of all paths (edges) on the board
     public List<Path> getPaths() {
-        return Collections.unmodifiableList(new ArrayList<>(pathsById.values()));
+        return paths;
     }
 
     // Quickly find a specific node by its ID
@@ -121,6 +134,12 @@ public final class Board {
             throw new IllegalArgumentException("Unknown path id: " + pathId);
         }
         return path;
+    }
+
+    public List<Path> pathsAdjacentToNode(int nodeId) {
+        // Validate first for clearer error on unknown nodes.
+        getNode(nodeId);
+        return pathsByNodeId.getOrDefault(nodeId, List.of());
     }
 
     /*

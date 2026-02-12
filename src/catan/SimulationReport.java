@@ -5,8 +5,10 @@ import java.util.Map;
 import java.util.Objects;
 
 /*
- * SimulationReport packages all the results of the game into a readable format.
- * It contains the round-by-round logs and a final summary.
+ * EN: SimulationReport wraps simulation logs and final player state.
+ * EN: It is the output object returned by GameEngine.
+ * ZH: SimulationReport 封装模拟日志与最终玩家状态。
+ * ZH: 它是 GameEngine 返回的结果对象。
  */
 public final class SimulationReport {
     private final List<String> logLines;
@@ -25,7 +27,8 @@ public final class SimulationReport {
         return players;
     }
 
-    // Creates the scoreboard printed at the very end.
+    // EN: Build the human-readable final scoreboard.
+    // ZH: 生成可读的最终计分摘要。
     public String summarize() {
         StringBuilder summary = new StringBuilder();
         summary.append("Final Summary\n");
@@ -35,6 +38,7 @@ public final class SimulationReport {
                 summary.append(entry.getKey()).append("=").append(entry.getValue()).append(" ");
             }
             summary.append("settlements=").append(player.getSettlementNodeIds().size());
+            summary.append(" cities=").append(player.getCityNodeIds().size());
             summary.append(" roads=").append(player.getRoadPathIds().size());
             summary.append("\n");
         }

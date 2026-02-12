@@ -7,7 +7,7 @@ import java.util.Optional;
  * Represents a "Path" (an edge) between two nodes.
  * Paths are where roads are built.
  */
-public final class Path {
+public final class Path implements Identifiable {
     private final int id;
     private final int nodeAId; // First end of the road
     private final int nodeBId; // Second end of the road
@@ -45,6 +45,10 @@ public final class Path {
         return owner != null;
     }
 
+    public boolean isOwnedBy(Player player) {
+        return owner != null && owner.equals(player);
+    }
+
     public void claim(Player player) {
         Objects.requireNonNull(player, "player");
         if (owner != null) {
@@ -70,19 +74,24 @@ public final class Path {
         // Touch building check
         Node nodeA = board.getNode(nodeAId);
         Node nodeB = board.getNode(nodeBId);
-        if ((nodeA.getOwner().isPresent() && nodeA.getOwner().get().equals(player))
-                || (nodeB.getOwner().isPresent() && nodeB.getOwner().get().equals(player))) {
+        if (nodeA.isOwnedBy(player) || nodeB.isOwnedBy(player)) {
             return true;
         }
         // Touch existing road check
-        for (Path other : board.getPaths()) {
-            if (other == this || !other.isClaimed()) {
-                continue;
-            }
-            if (other.getOwner().isPresent() && other.getOwner().get().equals(player)) {
-                if (other.isAdjacentToNode(nodeAId) || other.isAdjacentToNode(nodeBId)) {
-                    return true;
-                }
+        if (canExtendFromNode(board, player, nodeAId) || canExtendFromNode(board, player, nodeBId)) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean canExtendFromNode(Board board, Player player, int nodeId) {
+        Node node = board.getNode(nodeId);
+        if (node.isClaimed() && !node.isOwnedBy(player)) {
+            return false;
+        }
+        for (Path other : board.pathsAdjacentToNode(nodeId)) {
+            if (other != this && other.isOwnedBy(player)) {
+                return true;
             }
         }
         return false;

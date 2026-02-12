@@ -5,11 +5,14 @@ import java.util.List;
 import java.util.Map;
 
 /*
- * BuildPlanner is a utility class that helps the GameEngine and Players 
- * decide what can be built based on resources and board rules.
+ * EN: BuildPlanner is a utility class for build decision enumeration.
+ * EN: It checks board legality and resource affordability.
+ * ZH: BuildPlanner 是用于建造决策枚举的工具类。
+ * ZH: 它同时检查棋盘规则合法性与资源可负担性。
  */
 public final class BuildPlanner {
-    // Standard Catan resource costs for each building type
+    // EN: Standard Catan building costs.
+    // ZH: 标准卡坦建造消耗。
     private static final Map<ResourceType, Integer> SETTLEMENT_COST = Map.of(
             ResourceType.WOOD, 1,
             ResourceType.BRICK, 1,
@@ -25,43 +28,58 @@ public final class BuildPlanner {
             ResourceType.ORE, 3
     );
 
-    // Private constructor to prevent creating instances of this utility class
+    // EN: Utility class, no instance needed.
+    // ZH: 工具类，不需要实例化。
     private BuildPlanner() {
     }
 
     /*
-     * Scans the entire board to find every legal move a player can afford.
-     * It checks for city upgrades, then settlements, then roads.
+     * EN: Scan the board and return all legal + affordable actions.
+     * EN: Order: city upgrades, settlements, roads.
+     * ZH: 扫描棋盘并返回所有“合法且可负担”的动作。
+     * ZH: 顺序：城市升级、定居点、道路。
      */
     public static List<ActionDecision> availableActions(Board board, Player player) {
         List<ActionDecision> actions = new ArrayList<>();
-        
-        // Check every node to see if a city can be built (upgraded)
-        for (Node node : board.getNodes()) {
-            if (node.canUpgradeToCity(player) && player.canAfford(CITY_COST)) {
-                actions.add(ActionDecision.city(node.getId()));
+        boolean canAffordCity = player.canAfford(CITY_COST);
+        boolean canAffordSettlement = player.canAfford(SETTLEMENT_COST);
+        boolean canAffordRoad = player.canAfford(ROAD_COST);
+
+        // EN: City upgrade candidates.
+        // ZH: 城市升级候选。
+        if (canAffordCity) {
+            for (Node node : board.getNodes()) {
+                if (node.canUpgradeToCity(player)) {
+                    actions.add(ActionDecision.city(node.getId()));
+                }
             }
         }
         
-        // Check every node to see if a new settlement can be placed
-        for (Node node : board.getNodes()) {
-            if (node.canBuildSettlement(board, player) && player.canAfford(SETTLEMENT_COST)) {
-                actions.add(ActionDecision.settlement(node.getId()));
+        // EN: New settlement candidates.
+        // ZH: 新定居点候选。
+        if (canAffordSettlement) {
+            for (Node node : board.getNodes()) {
+                if (node.canBuildSettlement(board, player)) {
+                    actions.add(ActionDecision.settlement(node.getId()));
+                }
             }
         }
         
-        // Check every path to see if a road can be placed
-        for (Path path : board.getPaths()) {
-            if (path.canBuildRoad(board, player) && player.canAfford(ROAD_COST)) {
-                actions.add(ActionDecision.road(path.getId()));
+        // EN: Road candidates.
+        // ZH: 道路候选。
+        if (canAffordRoad) {
+            for (Path path : board.getPaths()) {
+                if (path.canBuildRoad(board, player)) {
+                    actions.add(ActionDecision.road(path.getId()));
+                }
             }
         }
         return actions;
     }
 
     /*
-     * If multiple actions are possible, this returns the first one found.
-     * If nothing can be built, it returns a "NONE" decision.
+     * EN: Return the first available action, or NONE if no action exists.
+     * ZH: 返回第一个可行动作；若无动作则返回 NONE。
      */
     public static ActionDecision forcedDecision(Board board, Player player) {
         List<ActionDecision> actions = availableActions(board, player);
@@ -71,7 +89,8 @@ public final class BuildPlanner {
         return actions.get(0);
     }
 
-    // Standard getters to share resource costs with other classes
+    // EN: Expose costs for engine/planner consistency.
+    // ZH: 对外暴露消耗，确保引擎与规划器使用同一规则。
     public static Map<ResourceType, Integer> settlementCost() {
         return SETTLEMENT_COST;
     }

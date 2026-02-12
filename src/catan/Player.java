@@ -8,13 +8,16 @@ import java.util.Objects;
 import java.util.Set;
 
 /*
- * Represents a player in the game.
- * It tracks their name, resource hand, buildings, and victory points.
+ * EN: Represents a player in the game.
+ * EN: Tracks resources, owned buildings/roads, and VP-related status.
+ * ZH: 表示一名玩家。
+ * ZH: 跟踪资源、已拥有建筑/道路以及胜利点相关状态。
  */
 public final class Player {
     private final String name;
     private final EnumMap<ResourceType, Integer> resources;
     private final Set<Integer> settlementNodeIds;
+    private final Set<Integer> cityNodeIds;
     private final Set<Integer> roadPathIds;
     private boolean hasLongestRoad = false;
 
@@ -25,6 +28,7 @@ public final class Player {
             resources.put(type, 0);
         }
         this.settlementNodeIds = new HashSet<>();
+        this.cityNodeIds = new HashSet<>();
         this.roadPathIds = new HashSet<>();
     }
 
@@ -49,7 +53,8 @@ public final class Player {
         return resources.getOrDefault(type, 0);
     }
 
-    // Basic resource management
+    // EN: Basic resource management (add to hand).
+    // ZH: 基础资源管理（增加手牌资源）。
     public void addResource(ResourceType type, int amount) {
         Objects.requireNonNull(type, "type");
         if (amount <= 0) {
@@ -78,8 +83,20 @@ public final class Player {
     }
 
     public void addSettlement(int nodeId) {
+        if (cityNodeIds.contains(nodeId)) {
+            throw new IllegalStateException("Node " + nodeId + " is already a city.");
+        }
         if (!settlementNodeIds.add(nodeId)) {
             throw new IllegalStateException("Settlement already recorded for node " + nodeId);
+        }
+    }
+
+    public void addCity(int nodeId) {
+        if (!settlementNodeIds.remove(nodeId)) {
+            throw new IllegalStateException("Cannot upgrade node " + nodeId + " without an existing settlement.");
+        }
+        if (!cityNodeIds.add(nodeId)) {
+            throw new IllegalStateException("City already recorded for node " + nodeId);
         }
     }
 
@@ -97,20 +114,27 @@ public final class Player {
         return Collections.unmodifiableSet(roadPathIds);
     }
 
-    // Setter for the title
+    public Set<Integer> getCityNodeIds() {
+        return Collections.unmodifiableSet(cityNodeIds);
+    }
+
+    // EN: Mark whether the player currently holds Longest Road.
+    // ZH: 设置玩家是否持有“最长路”称号。
     public void setHasLongestRoad(boolean hasIt) {
         this.hasLongestRoad = hasIt;
     }
 
     /*
-     * Scoring Logic:
-     * - 1 Point for every settlement owned.
-     * - 2 Points for holding the Longest Road title.
+     * EN: Scoring logic.
+     * EN: Settlement=1 VP, City=2 VP, Longest Road bonus=2 VP.
+     * ZH: 计分逻辑。
+     * ZH: 定居点=1 分，城市=2 分，最长路奖励=2 分。
      */
     public int getVictoryPoints() {
         int points = 0;
-        // 1 point per Settlement
+        // 1 point per settlement and 2 points per city
         points += settlementNodeIds.size();
+        points += cityNodeIds.size() * 2;
         // 2 points if holding Longest Road
         if (hasLongestRoad) {
             points += 2;
@@ -119,9 +143,10 @@ public final class Player {
     }
 
     /*
-     * Longest Road Calculation:
-     * This uses a "Depth First Search" (DFS). It starts from every road segment 
-     * and tries to "walk" as far as possible to find the longest continuous string.
+     * EN: Longest road calculation via DFS.
+     * EN: Start from each owned path and explore the longest walk without reusing edges.
+     * ZH: 使用 DFS 计算最长道路。
+     * ZH: 从每条已拥有道路出发，寻找不重复边的最长可达路径。
      */
     public int calculateLongestRoad(Board board) {
         if (roadPathIds.isEmpty()) return 0;
@@ -135,23 +160,23 @@ public final class Player {
         return maxLen;
     }
 
-    // Recursive helper that "walks" along connected paths
+    // EN: DFS helper for road walking with edge backtracking.
+    // ZH: DFS 递归辅助函数，带边回溯。
     private int walkRoad(Board board, int nodeId, Set<Integer> visited) {
         Node node = board.getNode(nodeId);
-        // Path is broken if an opponent has a settlement here
-        if (node.isClaimed() && !node.getOwner().get().equals(this)) {
+        // EN: Opponent building blocks road continuity through this node.
+        // ZH: 若该节点有对手建筑，则道路在此中断。
+        if (node.isClaimed() && !node.isOwnedBy(this)) {
             return 0;
         }
 
         int deepest = 0;
-        for (Path p : board.getPaths()) {
-            if (p.isAdjacentToNode(nodeId) && !visited.contains(p.getId())) {
-                if (p.getOwner().isPresent() && p.getOwner().get().equals(this)) {
-                    visited.add(p.getId());
-                    int nextNode = (p.getNodeAId() == nodeId) ? p.getNodeBId() : p.getNodeAId();
-                    deepest = Math.max(deepest, 1 + walkRoad(board, nextNode, visited));
-                    visited.remove(p.getId()); // Backtrack
-                }
+        for (Path path : board.pathsAdjacentToNode(nodeId)) {
+            if (!visited.contains(path.getId()) && path.isOwnedBy(this)) {
+                visited.add(path.getId());
+                int nextNode = (path.getNodeAId() == nodeId) ? path.getNodeBId() : path.getNodeAId();
+                deepest = Math.max(deepest, 1 + walkRoad(board, nextNode, visited));
+                visited.remove(path.getId()); // Backtrack
             }
         }
         return deepest;
