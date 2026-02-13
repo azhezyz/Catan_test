@@ -35,7 +35,7 @@ public final class Demonstrator {
 
         // A sample dice sequence covering common numbers
         GameEngine engine = new GameEngine(board, List.of(alice, bob, charlie, diana));
-        SimulationReport report = engine.runSimulation(100);
+        SimulationReport report = engine.runSimulation(8192);
 
         for (String line : report.getLogLines()) {
             System.out.println(line);
