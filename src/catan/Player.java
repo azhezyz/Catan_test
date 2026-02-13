@@ -47,7 +47,13 @@ public final class Player {
     public Map<ResourceType, Integer> getResources() {
         return Collections.unmodifiableMap(resources);
     }
-
+    public int getTotalResourceCount(){
+        int total = 0;
+        for (int amount : resources.values()) {
+            total += amount;
+        }
+        return total;
+    }
     
     public int getResourceCount(ResourceType type) {
         return resources.getOrDefault(type, 0);

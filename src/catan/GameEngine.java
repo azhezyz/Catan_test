@@ -58,7 +58,9 @@ public final class GameEngine {
             distributeResources(roll, log);
 
             for (Player player : players) {
-                executeBuildPhase(player, log);
+                if (player.getTotalResourceCount() > 7){
+                    executeBuildPhase(player, log);
+                }
 
                 // EN: End immediately once a player reaches 10 VP.
                 // ZH: 任一玩家达到 10 分立即结束。
