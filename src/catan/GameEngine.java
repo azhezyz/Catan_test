@@ -10,7 +10,7 @@ import java.util.Objects;
  * ZH: GameEngine 是卡坦模拟的核心控制器。
  * ZH: 它负责掷骰、资源分发与建造执行。
  */
-public final class GameEngine {
+public class GameEngine {
     private final Board board;
     private final List<Player> players;
     private final DiceSet diceSet;

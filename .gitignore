@@ -1,11 +1,3 @@
-# 默认忽略的文件
-/shelf/
-/workspace.xml
-# 基于编辑器的 HTTP 客户端请求
-/httpRequests/
-# Datasource local storage ignored files
-/dataSources/
-/dataSources.local.xml
 # IDE
 .idea/
 
@@ -20,6 +12,7 @@ visualize/.venv/
 # Python cache
 __pycache__/
 *.pyc
+visualize/__pycache__/
 
 # Local generated artifacts
 scraped_boards/
@@ -28,4 +21,3 @@ visualize/visualizer.out.log
 visualize/visualizer.err.log
 tmp_*.json
 visualize/catanatron/
-visualize/__pycache__/
