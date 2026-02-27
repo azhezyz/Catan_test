@@ -16,7 +16,7 @@ public final class Demonstrator {
         StandardGameSetup.seedInitialState(board, alice, bob, charlie, diana);
 
         GameEngine engine = new GameEngine(board, List.of(alice, bob, charlie, diana));
-        SimulationReport report = engine.runSimulation(100);
+        SimulationReport report = engine.runSimulation(8192);
 
         for (String line : report.getLogLines()) {
             System.out.println(line);
